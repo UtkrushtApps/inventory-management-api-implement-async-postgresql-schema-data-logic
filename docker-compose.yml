@@ -1,0 +1,33 @@
+version: '3.9'
+services:
+  db:
+    image: postgres:16.2
+    restart: always
+    environment:
+      POSTGRES_USER: shop_user
+      POSTGRES_PASSWORD: shop_pass
+      POSTGRES_DB: shopbridge
+    ports:
+      - '5432:5432'
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+      - ./schema.sql:/docker-entrypoint-initdb.d/schema.sql
+    networks:
+      - backendnet
+  api:
+    build: .
+    command: ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000"]
+    environment:
+      DATABASE_URL: postgresql+asyncpg://shop_user:shop_pass@db:5432/shopbridge
+    ports:
+      - '8000:8000'
+    depends_on:
+      - db
+    volumes:
+      - .:/code
+    networks:
+      - backendnet
+volumes:
+  pgdata:
+networks:
+  backendnet:
